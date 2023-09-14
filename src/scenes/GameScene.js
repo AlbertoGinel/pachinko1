@@ -26,16 +26,17 @@ export default class GameScene extends Phaser.Scene {
     //categories
     this.bearingCat = this.matter.world.nextCategory();
     this.waterCat = this.matter.world.nextCategory();
-
-    //creates
-    this.createWater();
-    this.createPlatforms();
+    this.platformCat = this.matter.world.nextCategory();
 
     //debug
     this.matter.world.createDebugGraphic();
 
     //bounds
-    this.matter.world.setBounds(0, 0, 800, 600);
+    this.matter.world.setBounds(0, 0, 800, 600, 32, true, true, false, false);
+
+    //creates
+    this.createWater();
+    this.createPlatforms();
 
     //controls
     this.spaceKey = this.input.keyboard.addKey(
@@ -45,12 +46,12 @@ export default class GameScene extends Phaser.Scene {
     //UI
     this.scoreText = this.add.text(16, 16, "" + this.score, {
       fontSize: "32px",
-      fill: "#fff",
+      color: "#fff",
     });
 
     this.MaxscoreText = this.add.text(720, 16, "" + this.score, {
       fontSize: "32px",
-      fill: "#ff1345",
+      color: "#ff1345",
     });
 
     this.matter.world.on("collisionstart", function (event, bodyA, bodyB) {
@@ -63,21 +64,23 @@ export default class GameScene extends Phaser.Scene {
     //this.matter.add.image(50, 250, "block1").setStatic(true);
     //.matter.add.image(750, 220, "block1").setStatic(true);
 
-    this.matter.add.image(50, 600, "block2").setStatic(true).setAngle(45);
+    this.matter.add.image(50, 600, "block2").setStatic(true).setAngle(45).setCollisionCategory(this.platformCat).setCollidesWith([this.bearingCat]);
 
-    this.matter.add.image(750, 600, "block2").setStatic(true).setAngle(135);
+    this.matter.add.image(750, 600, "block2").setStatic(true).setAngle(135).setCollisionCategory(this.platformCat).setCollidesWith([this.bearingCat]);
   }
 
   createBearingAt(x, y) {
     if (this.score > 0) {
       this.score = this.score - 1;
       this.scoreText.setText("" + this.score);
-      const bearing = this.matter.add
-        .sprite(x, y, "bearing")
-        .setCollisionCategory(this.bearingCat) //A) defines the
-        .setCollidesWith([this.waterCat, this.bearingCat]);
+      const bearing = this.matter.add.sprite(x, y, "bearing");
 
+        //  Calling `setCircle` will reset the entire body, clearing its collision masks, etc
       bearing.setCircle(13);
+
+        //  So you have to set them _after_ changing the body shape
+      bearing.setCollisionCategory(this.bearingCat) //A) defines the
+      bearing.setCollidesWith([this.waterCat, this.bearingCat, this.platformCat]);
 
       //looks like this isnt a proper Matter body, can you make it better??
       bearing.setBounce(0.9999);
@@ -99,8 +102,6 @@ export default class GameScene extends Phaser.Scene {
       bearing.setOnCollideWith(this.water.body, (body, collisionData) => {
         console.log("water collision");
       });
-
-      console.log(bearing);
     }
   }
 
